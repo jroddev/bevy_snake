@@ -36,12 +36,14 @@ fn main() {
         .insert_resource(position_history)
         .add_system(tick_gameplay)
         .add_event::<TickEvent>()
+        .add_startup_system(draw_origin)
         .add_startup_system(add_snake)
         .add_system(handle_input)
+        .add_system(bevy::input::system::exit_on_esc_system)
         .add_system(move_head)
         .add_system(snake_head_sprite_position)
         .add_system(snake_tail_sprite_positions)
-        .add_system(draw_origin)
+
         .run();
 }
 
@@ -177,21 +179,48 @@ fn move_head(
     }
 }
 
+fn direction_between(from: &GridPosition, to: &GridPosition) -> Direction {
+    let x = to.x - from.x;
+    let y = to.y - from .y;
+    match (x,y) {
+        (1, 0) => Direction::Right,
+        (-1, 0) => Direction::Left,
+        (0, 1) => Direction::Down,
+        (0, -1) => Direction::Up,
+        _ => Direction::Left
+    }
+}
+
 fn handle_input(
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<&mut MovementController>
+    position_history: ResMut<VecDeque<GridPosition>>,
+    mut query: Query<(&GridPosition,&mut MovementController), With<SnakeHead>>
 ){
-    let mut controller = query.single_mut();
+    if let Ok((grid_pos, mut controller)) = query.get_single_mut() {
 
-    // TODO: reject turning immediately to the second piece
-    if keyboard_input.just_pressed(KeyCode::Left) {
-        controller.direction = Direction::Left;
-    } else if keyboard_input.just_pressed(KeyCode::Right) {
-        controller.direction = Direction::Right;
-    } else if keyboard_input.just_pressed(KeyCode::Up) {
-        controller.direction = Direction::Up;
-    } else if  keyboard_input.just_pressed(KeyCode::Down) {
-        controller.direction = Direction::Down;
+
+        let new_direction = if keyboard_input.just_pressed(KeyCode::Left) {
+            Some(Direction::Left)
+        } else if keyboard_input.just_pressed(KeyCode::Right) {
+            Some(Direction::Right)
+        } else if keyboard_input.just_pressed(KeyCode::Up) {
+            Some(Direction::Up)
+        } else if keyboard_input.just_pressed(KeyCode::Down){
+            Some(Direction::Down)
+        } else {
+            None
+        };
+
+        if let Some(new_direction) = new_direction {
+            let reverse_direction = direction_between(
+                grid_pos,
+                &position_history[position_history.len()-1],
+
+            );
+            if new_direction != reverse_direction {
+                controller.direction = new_direction;
+            }
+        }
     }
 }
 
@@ -210,6 +239,7 @@ struct SnakeTail;
 #[derive(Component, Clone)]
 struct GridPosition { x: i32, y: i32 }
 
+#[derive(PartialEq)]
 enum Direction { Up, Down, Left, Right }
 #[derive(Component)]
 struct MovementController { direction: Direction }
