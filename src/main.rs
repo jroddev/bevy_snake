@@ -2,9 +2,11 @@ pub mod core;
 mod game_board;
 mod input;
 mod snake;
+mod food;
 
 use bevy::prelude::*;
 use crate::core::{GamePlugin, GameWindow, GridPosition};
+use crate::food::FoodPlugin;
 use crate::game_board::{GameBoardPlugin, GameBoardDesc};
 use crate::input::GameInputPlugin;
 use crate::snake::SnakePlugin;
@@ -12,7 +14,8 @@ use crate::snake::SnakePlugin;
 const TICK_TIME_SECONDS: f32 = 0.1;
 const GRID_SIZE: (i32, i32) = (15, 15);
 const CELL_SIZE: i32 = 15;
-const START_POS: GridPosition = GridPosition{x: 0, y: 7};
+const SNAKE_START_POS: GridPosition = GridPosition{x: 0, y: 7};
+const FOOD_START_POS: GridPosition = GridPosition{x: 7, y: 7};
 const START_TAIL_LENGTH: usize = 3;
 
 fn main() {
@@ -35,9 +38,14 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(GameBoardPlugin { desc: game_board_desc })
         .add_plugin(GameInputPlugin)
+        .add_plugin(FoodPlugin {
+            init_params: food::InitParams {
+                start_position: FOOD_START_POS
+            }
+        })
         .add_plugin(SnakePlugin {
             init_params: snake::InitParams{
-                start_position: START_POS,
+                start_position: SNAKE_START_POS,
                 initial_tail_length: START_TAIL_LENGTH
             }
         })

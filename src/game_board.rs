@@ -9,6 +9,7 @@ pub struct GameBoardDesc {
 }
 pub trait GameBoardHelpers {
     fn grid_pos_to_world_pos(&self, grid_pos: &GridPosition) -> Vec3;
+    fn world_pos_to_grid_pos(&self, translation: &Vec3) -> GridPosition;
 }
 pub struct GameBoardPlugin {
     pub desc: GameBoardDesc
@@ -30,6 +31,12 @@ impl GameBoardHelpers for GameBoardDesc {
             -(grid_pos.y * self.cell_size) as f32,
             0.
         )
+    }
+    fn world_pos_to_grid_pos(&self, translation: &Vec3) -> GridPosition {
+        GridPosition {
+            x: (translation.x.abs() as i32) / self.cell_size,
+            y: (translation.y.abs() as i32) / self.cell_size,
+        }
     }
 }
 

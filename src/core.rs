@@ -9,7 +9,7 @@ pub struct TickEvent();
 #[derive(PartialEq, Clone, Debug)]
 pub enum Direction { Up, Down, Left, Right }
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, PartialEq, Debug)]
 pub struct GridPosition { pub x: i32, pub y: i32 }
 
 pub struct GameWindow {

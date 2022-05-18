@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use std::collections::VecDeque;
 use crate::core::{Direction, GridPosition, TickEvent};
+use crate::food::{ConsumeEvent, FoodComponent};
 use crate::game_board::{GameBoardDesc,GameBoardHelpers};
 
 #[derive(Component)]
@@ -43,11 +44,25 @@ impl Plugin for SnakePlugin {
             .add_startup_system(add_snake)
             .add_system(handle_input)
             .add_system(move_head)
+            .add_system(consume_food)
+            .add_system(check_collide_with_food)
             .add_system(snake_head_sprite_position)
             .add_system(snake_tail_sprite_positions);
     }
 }
 
+
+fn get_snake_sprite_bundle(size: f32) -> SpriteBundle {
+    SpriteBundle {
+        sprite: Sprite {
+            color: Color::rgb(0.25, 0.25, 0.75),
+            custom_size: Some(Vec2::new(size, size)),
+            anchor: Anchor::TopLeft,
+            ..default()
+        },
+        ..default()
+    }
+}
 
 
 fn add_snake(
@@ -59,18 +74,7 @@ fn add_snake(
 
     camera.transform.translation.x = (game_board.cell_size * game_board.grid_size.0) as f32 * 0.5;
     camera.transform.translation.y = -((game_board.cell_size * game_board.grid_size.1) as f32 * 0.5);
-    println!("camera: {},{}", camera.transform.translation.x, camera.transform.translation.y);
     commands.spawn_bundle(camera);
-
-    let sprite = SpriteBundle {
-        sprite: Sprite {
-            color: Color::rgb(0.25, 0.25, 0.75),
-            custom_size: Some(Vec2::new(game_board.cell_size as f32, game_board.cell_size as f32)),
-            anchor: Anchor::TopLeft,
-            ..default()
-        },
-        ..default()
-    };
 
     commands
         .spawn()
@@ -80,14 +84,13 @@ fn add_snake(
             y: init_data.start_position.y
         })
         .insert(MovementController{direction: Direction::Right})
-        .insert_bundle(sprite.clone());
+        .insert_bundle(get_snake_sprite_bundle(game_board.cell_size as f32));
 
-    for i in 0..init_data.initial_tail_length {
-        println!("create tail element {}", i);
+    for _ in 0..init_data.initial_tail_length {
         commands
             .spawn()
             .insert(SnakeTail{})
-            .insert_bundle(sprite.clone());
+            .insert_bundle(get_snake_sprite_bundle(game_board.cell_size as f32));
     }
 }
 
@@ -113,6 +116,39 @@ fn snake_tail_sprite_positions(
     }
 }
 
+fn check_collide_with_food(
+    head_query: Query<(&Transform, With<SnakeHead>)>,
+    other_query: Query<((&Transform, Entity), With<FoodComponent>)>,
+    mut consume_events: EventWriter<ConsumeEvent>,
+) {
+    if let Ok(head) = head_query.get_single() {
+        for ((transform, other_entity), _ ) in other_query.iter() {
+            if head.0.translation == transform.translation {
+                consume_events.send(ConsumeEvent{target: other_entity});
+                return;
+            }
+        }
+    }
+}
+
+fn consume_food(
+    game_board: Res<GameBoardDesc>,
+    query: Query<(&GridPosition, With<SnakeHead>)>,
+    mut consume_events: EventReader<ConsumeEvent>,
+    mut position_history: ResMut<VecDeque<GridPosition>>,
+    mut commands: Commands
+) {
+    if consume_events.iter().next().is_some() {
+
+        let (grid_pos, _) = query.single();
+        position_history.push_back(grid_pos.clone());
+        commands
+            .spawn()
+            .insert(SnakeTail{})
+            .insert_bundle(get_snake_sprite_bundle(game_board.cell_size as f32));
+    }
+}
+
 fn move_head(
     game_board: Res<GameBoardDesc>,
     mut tick_events: EventReader<TickEvent>,
@@ -134,7 +170,6 @@ fn move_head(
         // Wrap Around
         grid_pos.x = (grid_pos.x + game_board.grid_size.0) % game_board.grid_size.0;
         grid_pos.y = (grid_pos.y + game_board.grid_size.1) % game_board.grid_size.1;
-        // println!("position: {},{}", grid_pos.x, grid_pos.y);
     }
 }
 
