@@ -28,8 +28,8 @@ pub struct SnakePlugin {
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
         let position_history : Vec<GridPosition> = vec![GridPosition{
-            x: self.init_params.start_position.x,
-            y: self.init_params.start_position.y
+            x: -1,
+            y: -1
         }]
             .iter()
             .cycle()
@@ -46,6 +46,7 @@ impl Plugin for SnakePlugin {
             .add_system(move_head)
             .add_system(consume_food)
             .add_system(check_collide_with_food)
+            .add_system(check_for_bite_self)
             .add_system(snake_head_sprite_position)
             .add_system(snake_tail_sprite_positions);
     }
@@ -146,6 +147,22 @@ fn consume_food(
             .spawn()
             .insert(SnakeTail{})
             .insert_bundle(get_snake_sprite_bundle(game_board.cell_size as f32));
+    }
+}
+
+fn check_for_bite_self(
+    query: Query<&GridPosition, With<SnakeHead>>,
+    position_history: ResMut<VecDeque<GridPosition>>,
+) {
+    if let Ok(head) = query.get_single() {
+        position_history
+            .iter()
+            .take(position_history.len()-1)
+            .for_each(|pos|{
+                if pos == head {
+                    println!("dead at {:?}", pos);
+                }
+            })
     }
 }
 
