@@ -1,12 +1,14 @@
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use std::collections::VecDeque;
-use crate::core::{Direction, GridPosition, TickEvent};
+use crate::core::{Direction, GamePhase, GameState, GridPosition, TickEvent};
 use crate::food::{ConsumeEvent, FoodComponent};
 use crate::game_board::{GameBoardDesc,GameBoardHelpers};
 
 #[derive(Component)]
-struct SnakeHead;
+struct SnakeHead {
+    last_eat_position: Option<GridPosition>
+}
 
 #[derive(Component)]
 struct SnakeTail;
@@ -79,7 +81,7 @@ fn add_snake(
 
     commands
         .spawn()
-        .insert(SnakeHead{})
+        .insert(SnakeHead{last_eat_position: None})
         .insert(GridPosition {
             x: init_data.start_position.x,
             y: init_data.start_position.y
@@ -118,13 +120,24 @@ fn snake_tail_sprite_positions(
 }
 
 fn check_collide_with_food(
-    head_query: Query<(&Transform, With<SnakeHead>)>,
+    mut head_query: Query<(&Transform, &GridPosition, &mut SnakeHead)>,
     other_query: Query<((&Transform, Entity), With<FoodComponent>)>,
     mut consume_events: EventWriter<ConsumeEvent>,
 ) {
-    if let Ok(head) = head_query.get_single() {
+    if let Ok((head_transform, head_grid_pos, mut head)) = head_query.get_single_mut() {
+        match &head.last_eat_position {
+            Some(last_eat_position) => {
+                if last_eat_position == head_grid_pos {
+                    // Already consumed this
+                    return;
+                }
+            }
+            None => {}
+        }
+
         for ((transform, other_entity), _ ) in other_query.iter() {
-            if head.0.translation == transform.translation {
+            if head_transform.translation == transform.translation {
+                head.last_eat_position = Some(head_grid_pos.clone());
                 consume_events.send(ConsumeEvent{target: other_entity});
                 return;
             }
@@ -141,8 +154,10 @@ fn consume_food(
 ) {
     if consume_events.iter().next().is_some() {
 
+        // This block is running more than once. timing issue
         let (grid_pos, _) = query.single();
         position_history.push_back(grid_pos.clone());
+        // println!("history {:?}", position_history);
         commands
             .spawn()
             .insert(SnakeTail{})
@@ -151,6 +166,7 @@ fn consume_food(
 }
 
 fn check_for_bite_self(
+    mut game_state: ResMut<GameState>,
     query: Query<&GridPosition, With<SnakeHead>>,
     position_history: ResMut<VecDeque<GridPosition>>,
 ) {
@@ -161,6 +177,8 @@ fn check_for_bite_self(
             .for_each(|pos|{
                 if pos == head {
                     println!("dead at {:?}", pos);
+                    println!("from {:?}", position_history);
+                    game_state.phase = GamePhase::DEAD;
                 }
             })
     }

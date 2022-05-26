@@ -12,6 +12,14 @@ pub enum Direction { Up, Down, Left, Right }
 #[derive(Component, Clone, PartialEq, Debug)]
 pub struct GridPosition { pub x: i32, pub y: i32 }
 
+pub enum GamePhase {
+    RUNNING,
+    DEAD
+}
+pub struct GameState {
+ pub phase: GamePhase
+}
+
 pub struct GameWindow {
     pub title: String,
     pub width: f32,
@@ -35,6 +43,7 @@ impl Plugin for GamePlugin {
             Timer::from_seconds(self.tick_time_seconds, true));
 
         app
+            .insert_resource(GameState{phase: GamePhase::RUNNING})
             .insert_resource(window_desc)
             .insert_resource(tick_timer)
             .add_event::<TickEvent>()
