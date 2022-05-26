@@ -4,6 +4,7 @@ mod input;
 mod snake;
 mod food;
 
+use std::time::Duration;
 use bevy::prelude::*;
 use crate::core::{GamePlugin, GameWindow, GridPosition};
 use crate::food::FoodPlugin;
@@ -45,6 +46,7 @@ fn main() {
         })
         .add_plugin(SnakePlugin {
             init_params: snake::InitParams{
+                movement_time_step: Duration::from_secs_f32(TICK_TIME_SECONDS),
                 start_position: SNAKE_START_POS,
                 initial_tail_length: START_TAIL_LENGTH
             }

@@ -1,10 +1,6 @@
 use bevy::prelude::*;
+use iyes_loopless::prelude::*;
 
-
-struct GameplayTickTimer(Timer);
-
-#[derive(Default)]
-pub struct TickEvent();
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Direction { Up, Down, Left, Right }
@@ -12,12 +8,10 @@ pub enum Direction { Up, Down, Left, Right }
 #[derive(Component, Clone, PartialEq, Debug)]
 pub struct GridPosition { pub x: i32, pub y: i32 }
 
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum GamePhase {
     RUNNING,
     DEAD
-}
-pub struct GameState {
- pub phase: GamePhase
 }
 
 pub struct GameWindow {
@@ -39,26 +33,33 @@ impl Plugin for GamePlugin {
             height: self.window.height,
             ..default()
         };
-        let tick_timer = GameplayTickTimer(
-            Timer::from_seconds(self.tick_time_seconds, true));
 
         app
-            .insert_resource(GameState{phase: GamePhase::RUNNING})
             .insert_resource(window_desc)
-            .insert_resource(tick_timer)
-            .add_event::<TickEvent>()
-            .add_system(tick_gameplay);
+            .insert_resource(GameoverTimer(Timer::from_seconds(2.0, true)))
+            .add_loopless_state(GamePhase::RUNNING)
+            .add_enter_system(GamePhase::DEAD, start_game_over_timer)
+            .add_system(start_new_game.run_in_state(GamePhase::DEAD));
     }
 }
 
-fn tick_gameplay(
+
+struct GameoverTimer(Timer);
+
+fn start_game_over_timer(mut timer: ResMut<GameoverTimer>) {
+    timer.0.reset();
+}
+
+fn start_new_game(
     time: Res<Time>,
-    mut timer: ResMut<GameplayTickTimer>,
-    mut tick_events: EventWriter<TickEvent>) {
+    mut timer: ResMut<GameoverTimer>,
+    mut commands: Commands
+) {
     if timer.0.tick(time.delta()).just_finished() {
-        tick_events.send(TickEvent());
+        commands.insert_resource(NextState(GamePhase::RUNNING));
     }
 }
+
 
 impl Direction {
     pub fn between(from: &GridPosition, to: &GridPosition) -> Direction {

@@ -19,6 +19,7 @@ impl Plugin for GameBoardPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_plugin(ShapePlugin)
+            .add_startup_system(add_camera)
             .insert_resource(self.desc.clone())
             .add_startup_system(draw_origin);
     }
@@ -38,6 +39,15 @@ impl GameBoardHelpers for GameBoardDesc {
             y: (translation.y.abs() as i32) / self.cell_size,
         }
     }
+}
+
+fn add_camera(game_board: Res<GameBoardDesc>, mut commands: Commands) {
+    let mut camera = OrthographicCameraBundle::new_2d();
+
+    camera.transform.translation.x = (game_board.cell_size * game_board.grid_size.0) as f32 * 0.5;
+    camera.transform.translation.y = -((game_board.cell_size * game_board.grid_size.1) as f32 * 0.5);
+    commands.spawn_bundle(camera);
+
 }
 
 fn draw_origin(game_board: Res<GameBoardDesc>, mut commands: Commands) {

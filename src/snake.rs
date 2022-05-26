@@ -1,14 +1,14 @@
 use bevy::prelude::*;
+use iyes_loopless::prelude::*;
 use bevy::sprite::Anchor;
 use std::collections::VecDeque;
-use crate::core::{Direction, GamePhase, GameState, GridPosition, TickEvent};
+use std::time::Duration;
+use crate::core::{Direction, GamePhase, GridPosition};
 use crate::food::{ConsumeEvent, FoodComponent};
 use crate::game_board::{GameBoardDesc,GameBoardHelpers};
 
 #[derive(Component)]
-struct SnakeHead {
-    last_eat_position: Option<GridPosition>
-}
+struct SnakeHead {}
 
 #[derive(Component)]
 struct SnakeTail;
@@ -16,8 +16,11 @@ struct SnakeTail;
 #[derive(Component)]
 struct MovementController { direction: Direction }
 
+type WithAnySnakeType = Or<(With<SnakeHead>, With<SnakeTail>)>;
+
 #[derive(Clone)]
 pub struct InitParams{
+    pub movement_time_step: Duration,
     pub start_position: GridPosition,
     pub initial_tail_length: usize
 }
@@ -27,30 +30,59 @@ pub struct SnakePlugin {
 }
 
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, StageLabel)]
+struct FixedUpdate;
+
+
+fn fill_vec<T: Clone>(value: T, count: usize) -> Vec<T> {
+    vec![value]
+        .iter()
+        .cycle()
+        .take(count)
+        .cloned()
+        .collect()
+}
+
 impl Plugin for SnakePlugin {
     fn build(&self, app: &mut App) {
-        let position_history : Vec<GridPosition> = vec![GridPosition{
-            x: -1,
-            y: -1
-        }]
-            .iter()
-            .cycle()
-            .take(self.init_params.initial_tail_length)
-            .cloned()
-            .collect();
-        let position_history: VecDeque<GridPosition> = VecDeque::from(position_history);
+
+
+        let fixed_time_step = SystemStage::parallel()
+            .with_system_set(ConditionSet::new()
+                .run_in_state(GamePhase::RUNNING)
+                .label("move")
+                .with_system(move_head)
+                .into())
+            .with_system_set(
+            ConditionSet::new()
+                .run_in_state(GamePhase::RUNNING)
+                .after("move")
+                .with_system(consume_food)
+                .with_system(check_collide_with_food)
+                .with_system(check_for_bite_self)
+                .into());
 
         app
-            .insert_resource(position_history)
+            .insert_resource(VecDeque::<GridPosition>::new())
             .insert_resource(self.init_params.clone())
-            .add_startup_system(add_snake)
-            .add_system(handle_input)
-            .add_system(move_head)
-            .add_system(consume_food)
-            .add_system(check_collide_with_food)
-            .add_system(check_for_bite_self)
-            .add_system(snake_head_sprite_position)
-            .add_system(snake_tail_sprite_positions);
+            .add_enter_system(GamePhase::RUNNING, add_snake)
+            .add_exit_system(GamePhase::DEAD, cleanup_snake)
+            .add_enter_system(GamePhase::DEAD, set_death_sprites)
+            .add_stage_before(
+                CoreStage::Update,
+                FixedUpdate,
+                FixedTimestepStage::new( self.init_params.movement_time_step)
+                    .with_stage(fixed_time_step)
+            )
+            .add_system_set(
+                ConditionSet::new()
+                    .run_in_state(GamePhase::RUNNING)
+                    .with_system(handle_input)
+
+                    .with_system(snake_head_sprite_position)
+                    .with_system(snake_tail_sprite_positions)
+                    .into()
+            );
     }
 }
 
@@ -71,17 +103,22 @@ fn get_snake_sprite_bundle(size: f32) -> SpriteBundle {
 fn add_snake(
     init_data: Res<InitParams>,
     game_board: Res<GameBoardDesc>,
+    mut position_history: ResMut<VecDeque<GridPosition>>,
     mut commands: Commands
 ) {
-    let mut camera = OrthographicCameraBundle::new_2d();
+    let starting_positions = VecDeque::from(
+        fill_vec(
+            GridPosition{x: -1, y: -1},
+            init_data.initial_tail_length
+        )
+    );
+    position_history.clear();
+    position_history.clone_from(&starting_positions);
 
-    camera.transform.translation.x = (game_board.cell_size * game_board.grid_size.0) as f32 * 0.5;
-    camera.transform.translation.y = -((game_board.cell_size * game_board.grid_size.1) as f32 * 0.5);
-    commands.spawn_bundle(camera);
 
     commands
         .spawn()
-        .insert(SnakeHead{last_eat_position: None})
+        .insert(SnakeHead{})
         .insert(GridPosition {
             x: init_data.start_position.x,
             y: init_data.start_position.y
@@ -94,6 +131,21 @@ fn add_snake(
             .spawn()
             .insert(SnakeTail{})
             .insert_bundle(get_snake_sprite_bundle(game_board.cell_size as f32));
+    }
+}
+
+fn cleanup_snake(
+    query: Query<Entity, WithAnySnakeType>,
+    mut commands: Commands
+) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
+    }
+}
+
+fn set_death_sprites(mut query: Query<&mut Sprite, Without<FoodComponent>>) {
+    for mut sprite in query.iter_mut() {
+        sprite.color = Color::RED;
     }
 }
 
@@ -120,24 +172,13 @@ fn snake_tail_sprite_positions(
 }
 
 fn check_collide_with_food(
-    mut head_query: Query<(&Transform, &GridPosition, &mut SnakeHead)>,
+    mut head_query: Query<(&Transform, With<SnakeHead>)>,
     other_query: Query<((&Transform, Entity), With<FoodComponent>)>,
     mut consume_events: EventWriter<ConsumeEvent>,
 ) {
-    if let Ok((head_transform, head_grid_pos, mut head)) = head_query.get_single_mut() {
-        match &head.last_eat_position {
-            Some(last_eat_position) => {
-                if last_eat_position == head_grid_pos {
-                    // Already consumed this
-                    return;
-                }
-            }
-            None => {}
-        }
-
+    if let Ok((head_transform, _)) = head_query.get_single_mut() {
         for ((transform, other_entity), _ ) in other_query.iter() {
             if head_transform.translation == transform.translation {
-                head.last_eat_position = Some(head_grid_pos.clone());
                 consume_events.send(ConsumeEvent{target: other_entity});
                 return;
             }
@@ -153,8 +194,6 @@ fn consume_food(
     mut commands: Commands
 ) {
     if consume_events.iter().next().is_some() {
-
-        // This block is running more than once. timing issue
         let (grid_pos, _) = query.single();
         position_history.push_back(grid_pos.clone());
         // println!("history {:?}", position_history);
@@ -166,7 +205,7 @@ fn consume_food(
 }
 
 fn check_for_bite_self(
-    mut game_state: ResMut<GameState>,
+    mut commands: Commands,
     query: Query<&GridPosition, With<SnakeHead>>,
     position_history: ResMut<VecDeque<GridPosition>>,
 ) {
@@ -178,7 +217,8 @@ fn check_for_bite_self(
                 if pos == head {
                     println!("dead at {:?}", pos);
                     println!("from {:?}", position_history);
-                    game_state.phase = GamePhase::DEAD;
+                    // game_state.phase = GamePhase::DEAD;
+                    commands.insert_resource(NextState(GamePhase::DEAD));
                 }
             })
     }
@@ -186,26 +226,23 @@ fn check_for_bite_self(
 
 fn move_head(
     game_board: Res<GameBoardDesc>,
-    mut tick_events: EventReader<TickEvent>,
     mut position_history: ResMut<VecDeque<GridPosition>>,
     mut query: Query<(&mut GridPosition, &MovementController, With<SnakeHead>)>
 ){
-    if tick_events.iter().count() > 0 {
-        let (mut grid_pos, movement, _) = query.single_mut();
-        position_history.pop_front();
-        position_history.push_back(grid_pos.clone());
+    let (mut grid_pos, movement, _) = query.single_mut();
+    position_history.pop_front();
+    position_history.push_back(grid_pos.clone());
 
-        match movement.direction {
-            Direction::Up => grid_pos.y -= 1,
-            Direction::Down => grid_pos.y += 1,
-            Direction::Left => grid_pos.x -= 1,
-            Direction::Right => grid_pos.x += 1
-        }
-
-        // Wrap Around
-        grid_pos.x = (grid_pos.x + game_board.grid_size.0) % game_board.grid_size.0;
-        grid_pos.y = (grid_pos.y + game_board.grid_size.1) % game_board.grid_size.1;
+    match movement.direction {
+        Direction::Up => grid_pos.y -= 1,
+        Direction::Down => grid_pos.y += 1,
+        Direction::Left => grid_pos.x -= 1,
+        Direction::Right => grid_pos.x += 1
     }
+
+    // Wrap Around
+    grid_pos.x = (grid_pos.x + game_board.grid_size.0) % game_board.grid_size.0;
+    grid_pos.y = (grid_pos.y + game_board.grid_size.1) % game_board.grid_size.1;
 }
 
 fn handle_input(
