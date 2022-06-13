@@ -1,14 +1,15 @@
 use bevy::prelude::*;
 use std::collections::VecDeque;
 use crate::core::GridPosition;
-use crate::game_board::{GameBoardDesc, GameBoardHelpers};
+use crate::game_board::helpers::GameBoardHelpers;
+use crate::game_board::board;
 use super::helpers;
 
 #[derive(Component)]
 pub struct SnakeTail;
 
 pub fn snake_tail_sprite_positions(
-    game_board: Res<GameBoardDesc>,
+    game_board: Res<board::Desc>,
     position_history: Res<VecDeque<GridPosition>>,
     mut query: Query<&mut Transform, With<SnakeTail>>
 ) {

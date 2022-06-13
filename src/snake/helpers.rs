@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use std::time::Duration;
 use std::collections::VecDeque;
-use crate::game_board::GameBoardDesc;
+use crate::game_board::board;
 use crate::core::GridPosition;
 
 use super::head;
@@ -20,7 +20,7 @@ pub struct InitParams{
 
 pub fn add_snake(
     init_data: Res<InitParams>,
-    game_board: Res<GameBoardDesc>,
+    game_board: Res<board::Desc>,
     mut position_history: ResMut<VecDeque<GridPosition>>,
     mut commands: Commands
 ) {

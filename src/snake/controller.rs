@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 use std::collections::VecDeque;
 use crate::core::{Direction, GameState, GridPosition};
-use crate::game_board::GameBoardDesc;
+use crate::game_board::board;
 use crate::food;
 
 use super::head;
@@ -34,7 +34,7 @@ pub fn handle_input(
 }
 
 pub fn move_head(
-    game_board: Res<GameBoardDesc>,
+    game_board: Res<board::Desc>,
     mut position_history: ResMut<VecDeque<GridPosition>>,
     mut query: Query<(&mut GridPosition, &MovementController, With<head::SnakeHead>)>
 ){
@@ -71,7 +71,7 @@ pub fn check_collide_with_food(
 }
 
 pub fn consume_food(
-    game_board: Res<GameBoardDesc>,
+    game_board: Res<board::Desc>,
     query: Query<(&GridPosition, With<head::SnakeHead>)>,
     mut consume_events: EventReader<food::ConsumeEvent>,
     mut position_history: ResMut<VecDeque<GridPosition>>,

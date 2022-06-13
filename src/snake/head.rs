@@ -2,13 +2,14 @@ use bevy::prelude::*;
 use super::helpers;
 use super::controller::MovementController;
 use crate::core::{GridPosition, Direction};
-use crate::game_board::{GameBoardDesc, GameBoardHelpers};
+use crate::game_board::helpers::GameBoardHelpers;
+use crate::game_board::board;
 
 #[derive(Component)]
 pub struct SnakeHead {}
 
 pub fn snake_head_sprite_position(
-    game_board: Res<GameBoardDesc>,
+    game_board: Res<board::Desc>,
     mut query: Query<(&GridPosition, &mut Transform), With<SnakeHead>>
 ) {
     if let Ok((grid_pos, mut transform)) = query.get_single_mut() {

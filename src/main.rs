@@ -8,7 +8,8 @@ use std::time::Duration;
 use bevy::prelude::*;
 use crate::core::{GamePlugin, GameWindow, GridPosition};
 use crate::food::FoodPlugin;
-use crate::game_board::{GameBoardPlugin, GameBoardDesc};
+use crate::game_board::board;
+use crate::game_board::plugin::GameBoardPlugin;
 use crate::input::GameInputPlugin;
 
 const TICK_TIME_SECONDS: f32 = 0.1;
@@ -20,7 +21,7 @@ const START_TAIL_LENGTH: usize = 3;
 
 fn main() {
     println!("Hello, Snake!");
-    let game_board_desc = GameBoardDesc{
+    let game_board_desc = board::Desc{
         grid_size: GRID_SIZE,
         cell_size: CELL_SIZE,
     };

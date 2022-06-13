@@ -1,8 +1,9 @@
 use rand::prelude::*;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
-use crate::{GameBoardDesc, GridPosition};
-use crate::game_board::GameBoardHelpers;
+use crate::game_board::board;
+use crate::game_board::helpers::GameBoardHelpers;
+use crate::core::GridPosition;
 
 #[derive(Clone)]
 pub struct InitParams{
@@ -33,7 +34,7 @@ impl Plugin for FoodPlugin {
 
 fn init_food(
     init_data: Res<InitParams>,
-    game_board: Res<GameBoardDesc>,
+    game_board: Res<board::Desc>,
     mut commands: Commands
 ) {
     spawn_food(
@@ -46,7 +47,7 @@ fn init_food(
 
 fn spawn_food(
     grid_position: GridPosition,
-    game_board: &Res<GameBoardDesc>,
+    game_board: &Res<board::Desc>,
     commands: &mut Commands
 ) {
     let translation = game_board
@@ -70,7 +71,7 @@ fn spawn_food(
 }
 
 fn consume_food(
-    game_board: Res<GameBoardDesc>,
+    game_board: Res<board::Desc>,
     query: Query<Entity, With<FoodComponent>>,
     all_transforms: Query<&Transform>,
     mut consume_events: EventReader<ConsumeEvent>,
@@ -98,7 +99,7 @@ fn consume_food(
 
 
 fn find_next_position(
-    game_board: &Res<GameBoardDesc>,
+    game_board: &Res<board::Desc>,
     disallowed_positions: Vec<GridPosition>
 ) -> GridPosition {
     loop {
