@@ -34,7 +34,7 @@ pub fn add_snake(
     position_history.clone_from(&starting_positions);
 
 
-    head::spawn(&mut commands, game_board.cell_size as f32);
+    head::spawn(&mut commands, init_data.start_position.clone(),game_board.cell_size as f32);
 
     for _ in 0..init_data.initial_tail_length {
         tail::spawn_node(&mut commands, game_board.cell_size as f32);

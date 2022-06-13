@@ -16,14 +16,11 @@ pub fn snake_head_sprite_position(
     }
 }
 
-pub fn spawn(commands: &mut Commands, cell_size: f32) {
+pub fn spawn(commands: &mut Commands, start_position: GridPosition, cell_size: f32) {
     commands
         .spawn()
         .insert(SnakeHead{})
-        .insert(GridPosition {
-            x: -1, //init_data.start_position.x,
-            y: -1 //init_data.start_position.y
-        })
+        .insert(start_position)
         .insert(MovementController{direction: Direction::Right})
         .insert_bundle(helpers::get_snake_sprite_bundle(cell_size));
 }
