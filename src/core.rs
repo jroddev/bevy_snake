@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-
 #[derive(PartialEq, Clone, Debug)]
 pub enum Direction { Up, Down, Left, Right }
 
@@ -9,7 +8,7 @@ pub enum Direction { Up, Down, Left, Right }
 pub struct GridPosition { pub x: i32, pub y: i32 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub enum GamePhase {
+pub enum GameState {
     RUNNING,
     DEAD
 }
@@ -37,9 +36,9 @@ impl Plugin for GamePlugin {
         app
             .insert_resource(window_desc)
             .insert_resource(GameoverTimer(Timer::from_seconds(2.0, true)))
-            .add_loopless_state(GamePhase::RUNNING)
-            .add_enter_system(GamePhase::DEAD, start_game_over_timer)
-            .add_system(start_new_game.run_in_state(GamePhase::DEAD));
+            .add_loopless_state(GameState::RUNNING)
+            .add_enter_system(GameState::DEAD, start_game_over_timer)
+            .add_system(start_new_game.run_in_state(GameState::DEAD));
     }
 }
 
@@ -56,7 +55,7 @@ fn start_new_game(
     mut commands: Commands
 ) {
     if timer.0.tick(time.delta()).just_finished() {
-        commands.insert_resource(NextState(GamePhase::RUNNING));
+        commands.insert_resource(NextState(GameState::RUNNING));
     }
 }
 

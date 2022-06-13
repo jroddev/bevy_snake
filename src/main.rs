@@ -10,7 +10,6 @@ use crate::core::{GamePlugin, GameWindow, GridPosition};
 use crate::food::FoodPlugin;
 use crate::game_board::{GameBoardPlugin, GameBoardDesc};
 use crate::input::GameInputPlugin;
-use crate::snake::SnakePlugin;
 
 const TICK_TIME_SECONDS: f32 = 0.1;
 const GRID_SIZE: (i32, i32) = (15, 15);
@@ -44,8 +43,8 @@ fn main() {
                 start_position: FOOD_START_POS
             }
         })
-        .add_plugin(SnakePlugin {
-            init_params: snake::InitParams{
+        .add_plugin(snake::plugin::SnakePlugin {
+            init_params: snake::helpers::InitParams{
                 movement_time_step: Duration::from_secs_f32(TICK_TIME_SECONDS),
                 start_position: SNAKE_START_POS,
                 initial_tail_length: START_TAIL_LENGTH
