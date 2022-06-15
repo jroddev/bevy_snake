@@ -54,7 +54,7 @@ mod tests {
     }
 
     #[test]
-    fn test_up_key() {
+    fn up_key() {
         let mut app = init_system();
         app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Up);
         app.update();
@@ -62,7 +62,7 @@ mod tests {
     }
 
     #[test]
-    fn test_down_key() {
+    fn down_key() {
         let mut app = init_system();
         app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Down);
         app.update();
@@ -70,7 +70,7 @@ mod tests {
     }
 
     #[test]
-    fn test_left_key() {
+    fn left_key() {
         let mut app = init_system();
         app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Left);
         app.update();
@@ -78,7 +78,7 @@ mod tests {
     }
 
     #[test]
-    fn test_right_key() {
+    fn right_key() {
         let mut app = init_system();
         app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Right);
         app.update();
@@ -86,7 +86,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multiple_keys() {
+    fn multiple_keys() {
         let mut app = init_system();
         app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Right);
         app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Up);
@@ -96,7 +96,7 @@ mod tests {
     }
 
     #[test]
-    fn test_no_keys() {
+    fn no_keys() {
         let mut app = init_system();
         app.update();
         assert_eq!(get_direction_events(&app), vec![]);
