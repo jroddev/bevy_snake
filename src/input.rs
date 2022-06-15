@@ -94,4 +94,11 @@ mod tests {
         app.update();
         assert_eq!(get_direction_events(&app), vec![Direction::Right, Direction::Up]);
     }
+
+    #[test]
+    fn test_no_keys() {
+        let mut app = init_system();
+        app.update();
+        assert_eq!(get_direction_events(&app), vec![]);
+    }
 }
