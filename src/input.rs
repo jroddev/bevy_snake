@@ -18,14 +18,17 @@ fn handle_keyboard_input(
     mut direction_events: EventWriter<Direction>) {
 
     if keyboard_input.just_pressed(KeyCode::Left) {
-            direction_events.send(Direction::Left)
-        } else if keyboard_input.just_pressed(KeyCode::Right) {
-            direction_events.send(Direction::Right)
-        } else if keyboard_input.just_pressed(KeyCode::Up) {
-            direction_events.send(Direction::Up)
-        } else if keyboard_input.just_pressed(KeyCode::Down){
-            direction_events.send(Direction::Down)
-        }
+        direction_events.send(Direction::Left)
+    }
+    if keyboard_input.just_pressed(KeyCode::Right) {
+        direction_events.send(Direction::Right)
+    }
+    if keyboard_input.just_pressed(KeyCode::Up) {
+        direction_events.send(Direction::Up)
+    }
+    if keyboard_input.just_pressed(KeyCode::Down){
+        direction_events.send(Direction::Down)
+    }
 }
 
 
@@ -80,5 +83,15 @@ mod tests {
         app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Right);
         app.update();
         assert_eq!(get_direction_events(&app), vec![Direction::Right]);
+    }
+
+    #[test]
+    fn test_multiple_keys() {
+        let mut app = init_system();
+        app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Right);
+        app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Up);
+        app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Up);
+        app.update();
+        assert_eq!(get_direction_events(&app), vec![Direction::Right, Direction::Up]);
     }
 }
