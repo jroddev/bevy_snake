@@ -34,7 +34,7 @@ impl GameBoardHelpers for board::Desc {
 }
 
 
-#[test]
-fn test_grid_pos_to_world_pos() {
-    assert_eq!(1,2);
-}
+// #[test]
+// fn test_grid_pos_to_world_pos() {
+//     assert_eq!(1,2);
+// }

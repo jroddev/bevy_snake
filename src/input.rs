@@ -16,6 +16,7 @@ impl Plugin for GameInputPlugin {
 fn handle_keyboard_input(
     keyboard_input: Res<Input<KeyCode>>,
     mut direction_events: EventWriter<Direction>) {
+
     if keyboard_input.just_pressed(KeyCode::Left) {
             direction_events.send(Direction::Left)
         } else if keyboard_input.just_pressed(KeyCode::Right) {
@@ -25,4 +26,59 @@ fn handle_keyboard_input(
         } else if keyboard_input.just_pressed(KeyCode::Down){
             direction_events.send(Direction::Down)
         }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use bevy::ecs::event::Events;
+    use super::*;
+
+    fn init_system() -> App {
+        let mut app = App::default();
+        app.add_event::<bevy::input::keyboard::KeyboardInput>();
+        app.add_plugin(GameInputPlugin);
+        app.world.insert_resource(Input::<KeyCode>::default());
+        app
+    }
+
+    fn get_direction_events(app: &App) -> Vec<Direction> {
+        app.world
+            .resource::<Events<Direction>>()
+            .iter_current_update_events()
+            .cloned()
+            .collect()
+    }
+
+    #[test]
+    fn test_up_key() {
+        let mut app = init_system();
+        app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Up);
+        app.update();
+        assert_eq!(get_direction_events(&app), vec![Direction::Up]);
+    }
+
+    #[test]
+    fn test_down_key() {
+        let mut app = init_system();
+        app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Down);
+        app.update();
+        assert_eq!(get_direction_events(&app), vec![Direction::Down]);
+    }
+
+    #[test]
+    fn test_left_key() {
+        let mut app = init_system();
+        app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Left);
+        app.update();
+        assert_eq!(get_direction_events(&app), vec![Direction::Left]);
+    }
+
+    #[test]
+    fn test_right_key() {
+        let mut app = init_system();
+        app.world.resource_mut::<Input<KeyCode>>().press(KeyCode::Right);
+        app.update();
+        assert_eq!(get_direction_events(&app), vec![Direction::Right]);
+    }
 }
