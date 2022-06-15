@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy::input::system::exit_on_esc_system;
-use crate::core::Direction;
+use crate::direction::Direction;
 
 pub struct GameInputPlugin;
 

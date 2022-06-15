@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 use std::collections::VecDeque;
-use crate::core::{Direction, GameState, GridPosition};
+use crate::core::{GameState, GridPosition};
+use crate::direction::Direction;
 use crate::game_board::board;
 use crate::food;
 
@@ -21,13 +22,12 @@ pub fn handle_input(
     if !direction_events.is_empty() {
         if let Ok((grid_pos, mut controller)) = query.get_single_mut() {
             let new_direction = direction_events.iter().last().unwrap().clone();
-            let reverse_direction = Direction::between(
-                grid_pos,
-                &position_history[position_history.len() - 1],
-            );
-            if new_direction != reverse_direction {
-                // Prevent reversing directly onto itself
-                controller.direction = new_direction;
+            let previous_position = &position_history[position_history.len() - 1];
+            if let Some(reverse_direction) = Direction::between(grid_pos, previous_position) {
+                if new_direction != reverse_direction {
+                    // Prevent reversing directly onto itself
+                    controller.direction = new_direction;
+                }
             }
         }
     }
