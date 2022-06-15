@@ -2,7 +2,6 @@ use rand::prelude::*;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use crate::game_board::board;
-use crate::game_board::helpers::GameBoardHelpers;
 use crate::core::GridPosition;
 
 #[derive(Clone)]

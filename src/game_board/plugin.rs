@@ -10,7 +10,7 @@ impl Plugin for GameBoardPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_plugin(ShapePlugin)
-            .add_startup_system(board::add_camera)
+            .add_startup_system(board::spawn_camera)
             .insert_resource(self.desc.clone())
             .add_startup_system(board::draw_origin);
     }

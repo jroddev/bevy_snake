@@ -3,7 +3,6 @@ use super::helpers;
 use super::controller::MovementController;
 use crate::core::GridPosition;
 use crate::direction::Direction;
-use crate::game_board::helpers::GameBoardHelpers;
 use crate::game_board::board;
 
 #[derive(Component)]
