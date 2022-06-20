@@ -7,7 +7,7 @@ mod direction;
 
 use std::time::Duration;
 use bevy::prelude::*;
-use crate::core::{GamePlugin, GameWindow, GridPosition};
+use crate::core::{GameStatePlugin, GameWindow, GridPosition};
 use crate::food::FoodPlugin;
 use crate::game_board::board;
 use crate::game_board::plugin::GameBoardPlugin;
@@ -26,16 +26,16 @@ fn main() {
         grid_size: GRID_SIZE,
         cell_size: CELL_SIZE,
     };
-    let window_desc = GameWindow {
-        title: "Bevy Snake".to_string(),
-        width: (game_board_desc.grid_size.0 * game_board_desc.cell_size) as f32,
-        height: (game_board_desc.grid_size.1 * game_board_desc.cell_size) as f32,
-    };
 
     App::new()
-        .add_plugin(GamePlugin{
-            window: window_desc,
-            tick_time_seconds: TICK_TIME_SECONDS
+        .add_plugin( GameWindow {
+            title: "Bevy Snake".to_string(),
+            width: game_board_desc.world_dimensions().0,
+            height: game_board_desc.world_dimensions().1,
+        })
+        .add_plugin(GameStatePlugin{
+            tick_time_sec: TICK_TIME_SECONDS,
+            game_over_pause_sec: 2.0
         })
         .add_plugins(DefaultPlugins)
         .add_plugin(GameBoardPlugin { desc: game_board_desc })

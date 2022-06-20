@@ -22,11 +22,26 @@ pub fn handle_input(
     if !direction_events.is_empty() {
         if let Ok((grid_pos, mut controller)) = query.get_single_mut() {
             let new_direction = direction_events.iter().last().unwrap().clone();
-            let previous_position = &position_history[position_history.len() - 1];
+
+            // On a food consume frame we push an extra tail node onto the array
+            // at the position of the head.
+            // This conflicts with the logic to prevent reversing direction
+            // If we detect this, select the next node down the chain
+            let head_moved = &position_history[position_history.len() - 1] != grid_pos;
+            let previous_position_index = if head_moved {
+                position_history.len() - 1
+            } else {
+                position_history.len() - 2
+            };
+            let previous_position = &position_history[previous_position_index];
+
             if let Some(reverse_direction) = Direction::between(grid_pos, previous_position) {
+                // Prevent reversing directly onto itself
                 if new_direction != reverse_direction {
-                    // Prevent reversing directly onto itself
                     controller.direction = new_direction;
+                } else {
+                    eprintln!("pos history: {:?}", position_history);
+                    panic!("no direction between {:?} and {:?}", grid_pos, previous_position)
                 }
             }
         }
@@ -78,6 +93,7 @@ pub fn consume_food(
     mut commands: Commands
 ) {
     if consume_events.iter().next().is_some() {
+        println!("snake consume event");
         let (grid_pos, _) = query.single();
         position_history.push_back(grid_pos.clone());
         tail::spawn_node(&mut commands, game_board.cell_size as f32);

@@ -41,8 +41,6 @@ pub fn add_snake(
     }
 }
 
-
-
 pub fn get_snake_sprite_bundle(size: f32) -> SpriteBundle {
     SpriteBundle {
         sprite: Sprite {
@@ -51,6 +49,7 @@ pub fn get_snake_sprite_bundle(size: f32) -> SpriteBundle {
             anchor: Anchor::TopLeft,
             ..default()
         },
+        transform: Transform::identity().with_translation(Vec3::new(-size, -size, 0.)),
         ..default()
     }
 }

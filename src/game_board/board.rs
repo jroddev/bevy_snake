@@ -22,6 +22,12 @@ impl Desc {
             y: (translation.y.abs() as i32) / self.cell_size,
         }
     }
+
+    pub fn world_dimensions(&self,) -> (f32, f32) {
+        let width = self.grid_size.0 * self.cell_size;
+        let height = self.grid_size.1 * self.cell_size;
+        (width as f32, height as f32)
+    }
 }
 
 fn set_camera_pos(camera_transform: &mut Transform, game_board: &Desc) {
@@ -72,6 +78,12 @@ pub fn draw_origin(game_board: Res<Desc>, mut commands: Commands) {
 mod tests {
     use bevy::render::camera::Camera2d;
     use super::*;
+
+    #[test]
+    fn world_dimensions() {
+        assert_eq!(Desc{ grid_size: (5, 5), cell_size: 10 }.world_dimensions(), (50.0, 50.0));
+        assert_eq!(Desc{ grid_size: (15, 8), cell_size: 18 }.world_dimensions(), (270.0, 144.0));
+    }
 
     #[test]
     fn grid_pos_to_world_pos() {

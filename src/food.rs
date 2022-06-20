@@ -80,6 +80,7 @@ fn consume_food(
         match query.iter().find(|food|{*food == event.target}) {
             None => {}
             Some(food) => {
+                println!("food consumed id:{:?}", food);
                 commands.entity(food).despawn();
                 if let Ok(next_position) = find_next_position(
                     &game_board,
@@ -88,6 +89,7 @@ fn consume_food(
                         .map(|t|{ game_board.world_pos_to_grid_pos(&t.translation) })
                         .collect::<Vec<GridPosition>>()
                 ) {
+                    println!("spawn food at {:?}", next_position);
                     spawn_food(next_position, &game_board, &mut commands);
                 }
             }

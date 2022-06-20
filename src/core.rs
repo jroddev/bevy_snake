@@ -17,23 +17,28 @@ pub struct GameWindow {
     pub height: f32,
 }
 
-pub struct GamePlugin{
-    pub window: GameWindow,
-    pub tick_time_seconds: f32
-}
-
-impl Plugin for GamePlugin {
+impl Plugin for GameWindow {
     fn build(&self, app: &mut App) {
         let window_desc = WindowDescriptor {
-            title: self.window.title.clone(),
-            width: self.window.width,
-            height: self.window.height,
+            title: self.title.clone(),
+            width: self.width,
+            height: self.height,
             ..default()
         };
 
+        app.insert_resource(window_desc);
+    }
+}
+
+pub struct GameStatePlugin{
+    pub tick_time_sec: f32,
+    pub game_over_pause_sec: f32
+}
+
+impl Plugin for GameStatePlugin {
+    fn build(&self, app: &mut App) {
         app
-            .insert_resource(window_desc)
-            .insert_resource(GameoverTimer(Timer::from_seconds(2.0, true)))
+            .insert_resource(GameOverTimer(Timer::from_seconds(self.game_over_pause_sec, true)))
             .add_loopless_state(GameState::RUNNING)
             .add_enter_system(GameState::DEAD, start_game_over_timer)
             .add_system(start_new_game.run_in_state(GameState::DEAD));
@@ -41,15 +46,15 @@ impl Plugin for GamePlugin {
 }
 
 
-struct GameoverTimer(Timer);
+struct GameOverTimer(Timer);
 
-fn start_game_over_timer(mut timer: ResMut<GameoverTimer>) {
+fn start_game_over_timer(mut timer: ResMut<GameOverTimer>) {
     timer.0.reset();
 }
 
 fn start_new_game(
     time: Res<Time>,
-    mut timer: ResMut<GameoverTimer>,
+    mut timer: ResMut<GameOverTimer>,
     mut commands: Commands
 ) {
     if timer.0.tick(time.delta()).just_finished() {
@@ -58,3 +63,27 @@ fn start_new_game(
 }
 
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{thread, time::Duration};
+
+    #[test]
+    fn switch_from_dead_to_running_after_time() {
+        let mut app = App::default();
+        app.add_plugins(MinimalPlugins);
+        app.add_plugin( GameStatePlugin{ tick_time_sec: 1.0, game_over_pause_sec: 1.0 });
+        app.update(); // setup initial state
+        assert_eq!(app.world.resource::<CurrentState<GameState>>().0, GameState::RUNNING);
+        app.world.insert_resource(NextState(GameState::DEAD));
+        app.update(); // process state change
+        assert_eq!(app.world.resource::<CurrentState<GameState>>().0, GameState::DEAD);
+        thread::sleep(Duration::from_millis(500));
+        app.update(); // tick timer
+        assert_eq!(app.world.resource::<CurrentState<GameState>>().0, GameState::DEAD);
+        thread::sleep(Duration::from_millis(500));
+        app.update(); // tick + complete timer
+        app.update(); // process state change
+        assert_eq!(app.world.resource::<CurrentState<GameState>>().0, GameState::RUNNING);
+    }
+}

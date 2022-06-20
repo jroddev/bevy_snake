@@ -29,7 +29,7 @@ impl Plugin for SnakePlugin {
                 ConditionSet::new()
                     .run_in_state(GameState::RUNNING)
                     .after("move")
-                    .with_system(controller::consume_food)
+
                     .with_system(controller::check_collide_with_food)
                     .with_system(controller::check_for_bite_self)
                     .into());
@@ -50,7 +50,7 @@ impl Plugin for SnakePlugin {
                 ConditionSet::new()
                     .run_in_state(GameState::RUNNING)
                     .with_system(controller::handle_input)
-
+                    .with_system(controller::consume_food)
                     .with_system(head::snake_head_sprite_position)
                     .with_system(tail::snake_tail_sprite_positions)
                     .into()
