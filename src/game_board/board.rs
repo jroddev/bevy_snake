@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::render::camera::Camera2d;
 use bevy_prototype_lyon::prelude::*;
 use crate::GridPosition;
 
@@ -71,6 +70,7 @@ pub fn draw_origin(game_board: Res<Desc>, mut commands: Commands) {
 
 #[cfg(test)]
 mod tests {
+    use bevy::render::camera::Camera2d;
     use super::*;
 
     #[test]
