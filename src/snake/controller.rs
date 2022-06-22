@@ -39,10 +39,10 @@ pub fn handle_input(
                 // Prevent reversing directly onto itself
                 if new_direction != reverse_direction {
                     controller.direction = new_direction;
-                } else {
-                    eprintln!("pos history: {:?}", position_history);
-                    panic!("no direction between {:?} and {:?}", grid_pos, previous_position)
                 }
+            } else {
+                eprintln!("grid pos: {:?}, pos history: {:?}", grid_pos, position_history);
+                panic!("no direction between {:?} and {:?}", grid_pos, previous_position)
             }
         }
     }
