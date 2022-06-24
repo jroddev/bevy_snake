@@ -28,6 +28,7 @@ pub fn handle_input(
                 new_direction.clone(),
                 game_board.grid_size
             );
+            // prevent snake reversing on itself immediately
             if predicted_position != controller.previous_position {
                 controller.direction = new_direction;
             }
