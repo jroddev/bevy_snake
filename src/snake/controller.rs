@@ -11,53 +11,36 @@ use super::tail;
 
 #[derive(Component)]
 pub struct MovementController {
-    pub direction: Direction
+    pub direction: Direction,
+    pub previous_position: GridPosition
 }
 
 pub fn handle_input(
-    position_history: ResMut<VecDeque<GridPosition>>,
+    game_board: Res<board::Desc>,
     mut direction_events: EventReader<Direction>,
     mut query: Query<(&GridPosition,&mut MovementController), With<head::SnakeHead>>
 ){
     if !direction_events.is_empty() {
         if let Ok((grid_pos, mut controller)) = query.get_single_mut() {
             let new_direction = direction_events.iter().last().unwrap().clone();
-
-            // On a food consume frame we push an extra tail node onto the array
-            // at the position of the head.
-            // This conflicts with the logic to prevent reversing direction
-            // If we detect this, select the next node down the chain
-            let head_moved = &position_history[position_history.len() - 1] != grid_pos;
-            let previous_position_index = if head_moved {
-                position_history.len() - 1
-            } else {
-                position_history.len() - 2
-            };
-            let previous_position = &position_history[previous_position_index];
-
-            if let Some(reverse_direction) = Direction::between(grid_pos, previous_position) {
-                // Prevent reversing directly onto itself
-                if new_direction != reverse_direction {
-                    controller.direction = new_direction;
-                }
-            } else {
-                eprintln!("grid pos: {:?}, pos history: {:?}", grid_pos, position_history);
-                panic!("no direction between {:?} and {:?}", grid_pos, previous_position)
+            let predicted_position = move_grid_position(
+                grid_pos.clone(),
+                new_direction.clone(),
+                game_board.grid_size
+            );
+            if predicted_position != controller.previous_position {
+                controller.direction = new_direction;
             }
         }
     }
 }
 
-pub fn move_head(
-    game_board: Res<board::Desc>,
-    mut position_history: ResMut<VecDeque<GridPosition>>,
-    mut query: Query<(&mut GridPosition, &MovementController, With<head::SnakeHead>)>
-){
-    let (mut grid_pos, movement, _) = query.single_mut();
-    position_history.pop_front();
-    position_history.push_back(grid_pos.clone());
+fn move_grid_position(
+    mut grid_pos: GridPosition,
+    direction: Direction,
+    grid_size: (i32, i32)) -> GridPosition {
 
-    match movement.direction {
+    match direction {
         Direction::Up => grid_pos.y -= 1,
         Direction::Down => grid_pos.y += 1,
         Direction::Left => grid_pos.x -= 1,
@@ -65,8 +48,28 @@ pub fn move_head(
     }
 
     // Wrap Around
-    grid_pos.x = (grid_pos.x + game_board.grid_size.0) % game_board.grid_size.0;
-    grid_pos.y = (grid_pos.y + game_board.grid_size.1) % game_board.grid_size.1;
+    grid_pos.x = (grid_pos.x + grid_size.0) % grid_size.0;
+    grid_pos.y = (grid_pos.y + grid_size.1) % grid_size.1;
+    grid_pos
+}
+
+pub fn move_head(
+    game_board: Res<board::Desc>,
+    mut position_history: ResMut<VecDeque<GridPosition>>,
+    mut query: Query<(&mut GridPosition, &mut MovementController, With<head::SnakeHead>)>
+){
+    let (mut grid_pos, mut movement, _) = query.single_mut();
+    movement.previous_position = grid_pos.clone();
+    position_history.pop_front();
+    position_history.push_back(grid_pos.clone());
+
+    let updated_position = move_grid_position(
+        grid_pos.clone(),
+        movement.direction.clone(),
+        game_board.grid_size
+    );
+    grid_pos.x = updated_position.x;
+    grid_pos.y = updated_position.y;
 }
 
 
