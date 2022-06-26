@@ -3,6 +3,7 @@ use iyes_loopless::prelude::*;
 use crate::core::{GameState, GridPosition};
 use crate::core::Direction;
 use crate::game_board::board;
+use crate::game_board::helpers::move_grid_position;
 use crate::food;
 use crate::snake::head::SnakeHead;
 use crate::snake::tail::SnakeTail;
@@ -35,24 +36,6 @@ pub fn handle_input(
             }
         }
     }
-}
-
-fn move_grid_position(
-    mut grid_pos: GridPosition,
-    direction: Direction,
-    grid_size: (i32, i32)) -> GridPosition {
-
-    match direction {
-        Direction::Up => grid_pos.y -= 1,
-        Direction::Down => grid_pos.y += 1,
-        Direction::Left => grid_pos.x -= 1,
-        Direction::Right => grid_pos.x += 1
-    }
-
-    // Wrap Around
-    grid_pos.x = (grid_pos.x + grid_size.0) % grid_size.0;
-    grid_pos.y = (grid_pos.y + grid_size.1) % grid_size.1;
-    grid_pos
 }
 
 pub fn move_head(
