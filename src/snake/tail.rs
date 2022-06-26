@@ -37,7 +37,7 @@ pub fn tick_position(
     for (tail_segment, mut transform, mut tail) in tail_query.iter_mut() {
         if let Ok(target_grid_pos) = grid_pos_query.get(tail.follow_target) {
             if target_grid_pos != &tail.next_position {
-                let new_next_position = target_grid_pos.clone();
+                let new_next_position = *target_grid_pos;
                 if let Ok(mut current_grid_pos) = grid_pos_query.get_mut(tail_segment) {
                     transform.translation = game_board.grid_pos_to_world_pos(&tail.next_position);
                     current_grid_pos.x = tail.next_position.x;
@@ -92,14 +92,17 @@ mod tests {
         app.insert_resource(tail_params);
         app.add_startup_system(test_system);
         app.update();
-        let mut tail_query = app.world.query::<(Entity, &SnakeTail, &GridPosition)>();
+        let mut tail_query = app.world.query::<(
+            Entity,
+            &SnakeTail,
+            &GridPosition,
+            With<Sprite>)>();
         assert_eq!(tail_query.iter(&app.world).count(), 1);
-        for (entity, tail, grid_pos) in tail_query.iter(&app.world).take(1) {
-            assert_eq!(tail.index, tail_params.segment_index);
-            assert_ne!(tail.follow_target, entity); // doesn't follow self
-            assert_eq!(tail.next_position, tail_params.follow_target_grid_pos);
-            assert_eq!(grid_pos, &GridPosition{x: -1, y: -1}); // initial grid positions is off screen
-        }
+        let (entity, tail, grid_pos, _) = tail_query.iter(&app.world).next().unwrap();
+        assert_eq!(tail.index, tail_params.segment_index);
+        assert_ne!(tail.follow_target, entity); // doesn't follow self
+        assert_eq!(tail.next_position, tail_params.follow_target_grid_pos);
+        assert_eq!(grid_pos, &GridPosition{x: -1, y: -1}); // initial grid positions is off screen
 
     }
 
