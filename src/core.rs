@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-#[derive(Component, Clone, PartialEq, Debug)]
+#[derive(Component, Clone, Copy, PartialEq, Debug)]
 pub struct GridPosition { pub x: i32, pub y: i32 }
 
 #[derive(PartialEq, Clone, Debug)]
