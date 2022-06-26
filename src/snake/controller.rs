@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
-use std::collections::VecDeque;
 use crate::core::{GameState, GridPosition};
-use crate::direction::Direction;
+use crate::core::Direction;
 use crate::game_board::board;
 use crate::food;
+use crate::snake::head::SnakeHead;
+use crate::snake::tail::SnakeTail;
 
 use super::head;
 use super::tail;
@@ -56,13 +57,10 @@ fn move_grid_position(
 
 pub fn move_head(
     game_board: Res<board::Desc>,
-    mut position_history: ResMut<VecDeque<GridPosition>>,
     mut query: Query<(&mut GridPosition, &mut MovementController, With<head::SnakeHead>)>
 ){
     let (mut grid_pos, mut movement, _) = query.single_mut();
     movement.previous_position = grid_pos.clone();
-    position_history.pop_front();
-    position_history.push_back(grid_pos.clone());
 
     let updated_position = move_grid_position(
         grid_pos.clone(),
@@ -91,34 +89,42 @@ pub fn check_collide_with_food(
 
 pub fn consume_food(
     game_board: Res<board::Desc>,
-    query: Query<(&GridPosition, With<head::SnakeHead>)>,
+    mut commands: Commands,
+    tail_query: Query<(Entity, &GridPosition, &SnakeTail)>,
     mut consume_events: EventReader<food::ConsumeEvent>,
-    mut position_history: ResMut<VecDeque<GridPosition>>,
-    mut commands: Commands
 ) {
     if consume_events.iter().next().is_some() {
         println!("snake consume event");
-        let (grid_pos, _) = query.single();
-        position_history.push_back(grid_pos.clone());
-        tail::spawn_node(&mut commands, game_board.cell_size as f32);
+
+        if let Some(end_of_tail) = tail_query
+            .iter()
+            .max_by(| a, b|{ a.2.index.cmp(&b.2.index) }) {
+                let next_index = end_of_tail.2.index + 1;
+                let follow_target_entity = end_of_tail.0;
+                let follow_target_pos = end_of_tail.1.clone();
+
+                tail::spawn_node(
+                    &mut commands,
+                    next_index,
+                    game_board.cell_size as f32,
+                    (follow_target_entity, follow_target_pos)
+                );
+        }
     }
 }
 
 pub fn check_for_bite_self(
     mut commands: Commands,
-    query: Query<&GridPosition, With<head::SnakeHead>>,
-    position_history: ResMut<VecDeque<GridPosition>>,
+    head_query: Query<&GridPosition, With<SnakeHead>>,
+    tail_query: Query<&GridPosition, With<SnakeTail>>
 ) {
-    if let Ok(head) = query.get_single() {
-        position_history
+    if let Ok(head_grid_pos) = head_query.get_single() {
+        if tail_query
             .iter()
-            .take(position_history.len()-1)
-            .for_each(|pos|{
-                if pos == head {
-                    println!("dead at {:?} with a score of {}", pos, position_history.len());
-                    commands.insert_resource(NextState(GameState::DEAD));
-                }
-            })
+            .any(|tail_grid_pos| { head_grid_pos == tail_grid_pos }) {
+            println!("dead at {:?}", head_grid_pos);
+            commands.insert_resource(NextState(GameState::DEAD));
+        }
     }
 }
 

@@ -51,8 +51,8 @@ impl Plugin for SnakePlugin {
                     .run_in_state(GameState::RUNNING)
                     .with_system(controller::handle_input)
                     .with_system(controller::consume_food)
-                    .with_system(head::snake_head_sprite_position)
-                    .with_system(tail::snake_tail_sprite_positions)
+                    .with_system(head::tick_position)
+                    .with_system(tail::tick_position)
                     .into()
             );
     }

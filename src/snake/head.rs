@@ -2,13 +2,15 @@ use bevy::prelude::*;
 use super::helpers;
 use super::controller::MovementController;
 use crate::core::GridPosition;
-use crate::direction::Direction;
+use crate::core::Direction;
 use crate::game_board::board;
 
 #[derive(Component)]
-pub struct SnakeHead {}
+pub struct SnakeHead {
+    pub end_of_tail: Option<Entity>
+}
 
-pub fn snake_head_sprite_position(
+pub fn tick_position(
     game_board: Res<board::Desc>,
     mut query: Query<(&GridPosition, &mut Transform), With<SnakeHead>>
 ) {
@@ -17,16 +19,21 @@ pub fn snake_head_sprite_position(
     }
 }
 
-pub fn spawn(commands: &mut Commands, start_position: GridPosition, cell_size: f32) {
+pub fn spawn(
+    commands: &mut Commands,
+    start_position: GridPosition,
+    cell_size: f32
+) -> Entity {
     commands
         .spawn()
-        .insert(SnakeHead{})
+        .insert(SnakeHead{end_of_tail: None})
         .insert(start_position.clone())
         .insert(MovementController{
             direction: Direction::Right,
-            previous_position: start_position.clone()
+            previous_position: start_position
         })
-        .insert_bundle(helpers::get_snake_sprite_bundle(cell_size));
+        .insert_bundle(helpers::get_snake_sprite_bundle(cell_size))
+        .id()
 }
 
 

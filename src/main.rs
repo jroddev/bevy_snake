@@ -3,7 +3,6 @@ mod game_board;
 mod input;
 mod snake;
 mod food;
-mod direction;
 
 use std::time::Duration;
 use bevy::prelude::*;

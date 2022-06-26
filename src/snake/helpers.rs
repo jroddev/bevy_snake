@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use std::time::Duration;
-use std::collections::VecDeque;
 use crate::game_board::board;
 use crate::core::GridPosition;
 
@@ -21,23 +20,23 @@ pub struct InitParams{
 pub fn add_snake(
     init_data: Res<InitParams>,
     game_board: Res<board::Desc>,
-    mut position_history: ResMut<VecDeque<GridPosition>>,
     mut commands: Commands
 ) {
-    let starting_positions = VecDeque::from(
-        fill_vec(
-            GridPosition{x: -1, y: -1},
-            init_data.initial_tail_length
-        )
+    let head = head::spawn(
+        &mut commands,
+        init_data.start_position.clone(),
+        game_board.cell_size as f32
     );
-    position_history.clear();
-    position_history.clone_from(&starting_positions);
-
-
-    head::spawn(&mut commands, init_data.start_position.clone(),game_board.cell_size as f32);
-
-    for _ in 0..init_data.initial_tail_length {
-        tail::spawn_node(&mut commands, game_board.cell_size as f32);
+    let mut follow_target = head;
+    let tail_default_pos = GridPosition{x: -1, y: -1};
+    for tail_index in 0..init_data.initial_tail_length {
+        let tail = tail::spawn_node(
+            &mut commands,
+            tail_index,
+            game_board.cell_size as f32,
+            (follow_target, tail_default_pos.clone())
+        );
+        follow_target = tail;
     }
 }
 
@@ -68,15 +67,3 @@ pub fn set_death_sprites(mut query: Query<&mut Sprite, Without<food::FoodCompone
         sprite.color = Color::RED;
     }
 }
-
-
-
-fn fill_vec<T: Clone>(value: T, count: usize) -> Vec<T> {
-    vec![value]
-        .iter()
-        .cycle()
-        .take(count)
-        .cloned()
-        .collect()
-}
-

@@ -1,9 +1,11 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-
 #[derive(Component, Clone, PartialEq, Debug)]
 pub struct GridPosition { pub x: i32, pub y: i32 }
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum Direction { Up, Down, Left, Right }
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum GameState {
