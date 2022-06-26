@@ -26,7 +26,7 @@ pub fn handle_input(
         if let Ok((grid_pos, mut controller)) = query.get_single_mut() {
             let new_direction = direction_events.iter().last().unwrap().clone();
             let predicted_position = move_grid_position(
-                grid_pos.clone(),
+                *grid_pos,
                 new_direction.clone(),
                 game_board.grid_size
             );
@@ -43,7 +43,7 @@ pub fn move_head(
     mut query: Query<(&mut GridPosition, &mut MovementController, With<head::SnakeHead>)>
 ){
     let (mut grid_pos, mut movement, _) = query.single_mut();
-    movement.previous_position = grid_pos.clone();
+    movement.previous_position = *grid_pos;
 
     let updated_position = move_grid_position(
         *grid_pos,
@@ -83,7 +83,7 @@ pub fn consume_food(
             .max_by(| a, b|{ a.2.index.cmp(&b.2.index) }) {
                 let next_index = end_of_tail.2.index + 1;
                 let follow_target_entity = end_of_tail.0;
-                let follow_target_pos = end_of_tail.1.clone();
+                let follow_target_pos = *end_of_tail.1;
 
                 tail::spawn_node(
                     &mut commands,
@@ -110,3 +110,92 @@ pub fn check_for_bite_self(
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use bevy::ecs::event::Events;
+    use super::*;
+
+    #[test]
+    fn handle_input_basic() {
+        let mut app = App::default();
+        app.add_event::<Direction>();
+        app.world.insert_resource(board::Desc {
+            grid_size: (5, 5),
+            cell_size: 10
+        });
+        app.world
+            .spawn()
+            .insert(GridPosition::new(1, 0))
+            .insert(MovementController{
+                direction: Direction::Right,
+                previous_position: GridPosition::new(-1, 0),
+            })
+            .insert(SnakeHead{});
+        app.add_system(handle_input);
+
+        app.world.resource_mut::<Events<Direction>>().send(Direction::Down);
+        app.update();
+        let movement_controller = app.world
+            .query::<&MovementController>()
+            .iter(&app.world)
+            .next()
+            .unwrap();
+        assert_eq!(movement_controller.direction, Direction::Down);
+
+        app.world.resource_mut::<Events<Direction>>().send(Direction::Right);
+        app.update();
+        let movement_controller = app.world
+            .query::<&MovementController>()
+            .iter(&app.world)
+            .next()
+            .unwrap();
+        assert_eq!(movement_controller.direction, Direction::Right);
+    }
+
+    #[test]
+    fn handle_input_prevent_reverse() {
+        let mut app = App::default();
+        app.add_event::<Direction>();
+        app.world.insert_resource(board::Desc {
+            grid_size: (5, 5),
+            cell_size: 10
+        });
+        app.world
+            .spawn()
+            .insert(GridPosition::new(1, 1))
+            .insert(MovementController{
+                direction: Direction::Right,
+                previous_position: GridPosition::new(0, 1),
+            })
+            .insert(SnakeHead{});
+        app.add_system(handle_input);
+
+        app.world.resource_mut::<Events<Direction>>().send(Direction::Left);
+        app.update();
+        let movement_controller = app.world
+            .query::<&MovementController>()
+            .iter(&app.world)
+            .next()
+            .unwrap();
+        assert_eq!(movement_controller.direction, Direction::Right);
+
+        app.world.resource_mut::<Events<Direction>>().send(Direction::Down);
+        app.update();
+        let mut movement_controller = app.world
+            .query::<&mut MovementController>()
+            .iter_mut(&mut app.world)
+            .next()
+            .unwrap();
+        assert_eq!(movement_controller.direction, Direction::Down);
+
+        movement_controller.previous_position.set(&GridPosition::new(1, 0));
+        app.world.resource_mut::<Events<Direction>>().send(Direction::Up);
+        app.update();
+        let movement_controller = app.world
+            .query::<&MovementController>()
+            .iter(&app.world)
+            .next()
+            .unwrap();
+        assert_eq!(movement_controller.direction, Direction::Down);
+    }
+}
