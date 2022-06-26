@@ -46,12 +46,11 @@ pub fn move_head(
     movement.previous_position = grid_pos.clone();
 
     let updated_position = move_grid_position(
-        grid_pos.clone(),
+        *grid_pos,
         movement.direction.clone(),
         game_board.grid_size
     );
-    grid_pos.x = updated_position.x;
-    grid_pos.y = updated_position.y;
+    grid_pos.set(&updated_position);
 }
 
 

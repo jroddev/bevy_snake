@@ -4,6 +4,13 @@ use iyes_loopless::prelude::*;
 #[derive(Component, Clone, Copy, PartialEq, Debug)]
 pub struct GridPosition { pub x: i32, pub y: i32 }
 
+impl GridPosition {
+    pub fn set(&mut self, new_value: &GridPosition) {
+        self.x = new_value.x;
+        self.y = new_value.y;
+    }
+}
+
 #[derive(PartialEq, Clone, Debug)]
 pub enum Direction { Up, Down, Left, Right }
 
@@ -87,5 +94,15 @@ mod tests {
         app.update(); // tick + complete timer
         app.update(); // process state change
         assert_eq!(app.world.resource::<CurrentState<GameState>>().0, GameState::RUNNING);
+    }
+
+    #[test]
+    fn grid_pos_set_sets_all_fields() {
+        let mut grid_pos = GridPosition{x: 111, y: 222};
+        assert_eq!(grid_pos.x, 111);
+        assert_eq!(grid_pos.y, 222);
+        grid_pos.set(&GridPosition{x:333, y:444});
+        assert_eq!(grid_pos.x, 333);
+        assert_eq!(grid_pos.y, 444);
     }
 }

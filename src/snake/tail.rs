@@ -40,10 +40,8 @@ pub fn tick_position(
                 let new_next_position = *target_grid_pos;
                 if let Ok(mut current_grid_pos) = grid_pos_query.get_mut(tail_segment) {
                     transform.translation = game_board.grid_pos_to_world_pos(&tail.next_position);
-                    current_grid_pos.x = tail.next_position.x;
-                    current_grid_pos.y = tail.next_position.y;
-                    tail.next_position.x = new_next_position.x;
-                    tail.next_position.y = new_next_position.y;
+                    current_grid_pos.set(&tail.next_position);
+                    tail.next_position.set(&new_next_position);
                 }
             }
         }
