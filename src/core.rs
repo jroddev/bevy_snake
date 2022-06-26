@@ -5,6 +5,10 @@ use iyes_loopless::prelude::*;
 pub struct GridPosition { pub x: i32, pub y: i32 }
 
 impl GridPosition {
+    pub fn new(x: i32, y: i32) -> Self {
+        GridPosition{x, y}
+    }
+
     pub fn set(&mut self, new_value: &GridPosition) {
         self.x = new_value.x;
         self.y = new_value.y;
