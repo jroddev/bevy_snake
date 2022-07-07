@@ -50,7 +50,7 @@ pub fn move_head(
         movement.direction.clone(),
         game_board.grid_size
     );
-    grid_pos.set(&updated_position);
+    *grid_pos = updated_position;
 }
 
 
